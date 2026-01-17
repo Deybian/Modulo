@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h3>Control de barra</h3>
+
+<input type="range" min="0" max="100" value="50"
+       oninput="setValor(this.value)">
+<span id="valorTxt">50</span> %
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
+    authDomain: "obs-barra.firebaseapp.com",
+    databaseURL: "https://obs-barra-default-rtdb.firebaseio.com",
+    projectId: "obs-barra",
+    storageBucket: "obs-barra.firebasestorage.app",
+    messagingSenderId: "515697971120",
+    appId: "1:515697971120:web:6cd07a5f10c46feef85075"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window.setValor = function(v) {
+    document.getElementById("valorTxt").innerText = v;
+    set(ref(db, "barra/valor"), Number(v));
+  }
+</script>
+
+</body>
+</html>
