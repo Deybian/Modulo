@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { background: transparent; margin: 0; }
+.container {
+  width: 400px;
+  height: 25px;
+  border: 2px solid white;
+}
+.bar {
+  height: 100%;
+  width: 0%;
+  background: lime;
+  transition: width 0.4s ease;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="bar" id="bar"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
+    authDomain: "obs-barra.firebaseapp.com",
+    databaseURL: "https://obs-barra-default-rtdb.firebaseio.com",
+    projectId: "obs-barra",
+    storageBucket: "obs-barra.firebasestorage.app",
+    messagingSenderId: "515697971120",
+    appId: "1:515697971120:web:6cd07a5f10c46feef85075"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const barraRef = ref(db, "barra/valor");
+
+  onValue(barraRef, (snapshot) => {
+    const valor = snapshot.val() ?? 0;
+    document.getElementById("bar").style.width = valor + "%";
+  });
+</script>
+
+</body>
+</html>
