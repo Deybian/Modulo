@@ -1,51 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+<meta charset="UTF-8">
+<title>HUD OBS</title>
 <style>
-body { background: transparent; margin: 0; }
-.container {
-  width: 400px;
-  height: 25px;
-  border: 2px solid white;
+body {
+  background: transparent;
+  font-family: Arial, sans-serif;
 }
-.bar {
+
+.hud {
+  width: 600px;
+  color: white;
+}
+
+.nombre {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.barra-base {
+  width: 100%;
+  height: 22px;
+  background: #222;
+  border: 2px solid #aaa;
+  position: relative;
+}
+
+.barra-relleno {
   height: 100%;
   width: 0%;
-  background: lime;
-  transition: width 0.4s ease;
+  background: linear-gradient(90deg, #6cff00, #2aff00);
+  transition: width 0.5s;
+}
+
+.valor {
+  position: absolute;
+  right: 10px;
+  top: 2px;
+  font-size: 14px;
+}
+
+.mensaje {
+  margin-top: 8px;
+  font-size: 18px;
+  opacity: 0;
+  transition: opacity 0.5s;
 }
 </style>
 </head>
-<body>
 
-<div class="container">
-  <div class="bar" id="bar"></div>
+<body>
+<div class="hud">
+  <div class="nombre" id="nombreBarra">---</div>
+
+  <div class="barra-base">
+    <div class="barra-relleno" id="relleno"></div>
+    <div class="valor" id="valor">0 / 0</div>
+  </div>
+
+  <div class="mensaje" id="mensaje"></div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
-    authDomain: "obs-barra.firebaseapp.com",
-    databaseURL: "https://obs-barra-default-rtdb.firebaseio.com",
-    projectId: "obs-barra",
-    storageBucket: "obs-barra.firebasestorage.app",
-    messagingSenderId: "515697971120",
-    appId: "1:515697971120:web:6cd07a5f10c46feef85075"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
+  authDomain: "obs-barra.firebaseapp.com",
+  databaseURL: "https://obs-barra-default-rtdb.firebaseio.com",
+  projectId: "obs-barra",
+  storageBucket: "obs-barra.firebasestorage.app",
+  messagingSenderId: "515697971120",
+  appId: "1:515697971120:web:6cd07a5f10c46feef85075"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-  const barraRef = ref(db, "barra/valor");
+const relleno = document.getElementById("relleno");
+const valor = document.getElementById("valor");
+const nombreBarra = document.getElementById("nombreBarra");
+const mensaje = document.getElementById("mensaje");
 
-  onValue(barraRef, (snapshot) => {
-    const valor = snapshot.val() ?? 0;
-    document.getElementById("bar").style.width = valor + "%";
-  });
+onValue(ref(db, "barra"), snap => {
+  if (!snap.exists()) return;
+
+  const data = snap.val();
+  const porcentaje = Math.min((data.actual / data.total) * 100, 100);
+
+  nombreBarra.textContent = data.nombre;
+  relleno.style.width = porcentaje + "%";
+  valor.textContent = `${data.actual} / ${data.total}`;
+
+  if (Date.now() < data.mostrarHasta) {
+    mensaje.textContent = data.mensaje;
+    mensaje.style.opacity = 1;
+  } else {
+    mensaje.style.opacity = 0;
+  }
+});
 </script>
-
 </body>
 </html>
