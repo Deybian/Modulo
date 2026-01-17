@@ -1,34 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Control Barra OBS</title>
+</head>
 <body>
 
-<h3>Control de barra</h3>
+<h2>Control HUD</h2>
 
-<input type="range" min="0" max="100" value="50"
-       oninput="setValor(this.value)">
-<span id="valorTxt">50</span> %
+<label>Nombre de la barra</label><br>
+<input id="nombre" value="META STREAM"><br><br>
+
+<label>Valor actual</label><br>
+<input id="actual" type="number" value="0"><br><br>
+
+<label>Valor total</label><br>
+<input id="total" type="number" value="250"><br><br>
+
+<label>Mensaje temporal</label><br>
+<input id="mensaje" placeholder="Ej: Gracias Juan"><br><br>
+
+<label>Duración (segundos)</label><br>
+<input id="segundos" type="number" value="5"><br><br>
+
+<button onclick="guardar()">Actualizar</button>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
-    authDomain: "obs-barra.firebaseapp.com",
-    databaseURL: "https://obs-barra-default-rtdb.firebaseio.com",
-    projectId: "obs-barra",
-    storageBucket: "obs-barra.firebasestorage.app",
-    messagingSenderId: "515697971120",
-    appId: "1:515697971120:web:6cd07a5f10c46feef85075"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
+  authDomain: "obs-barra.firebaseapp.com",
+  databaseURL: "https://obs-barra-default-rtdb.firebaseio.com",
+  projectId: "obs-barra",
+  storageBucket: "obs-barra.firebasestorage.app",
+  messagingSenderId: "515697971120",
+  appId: "1:515697971120:web:6cd07a5f10c46feef85075"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-  window.setValor = function(v) {
-    document.getElementById("valorTxt").innerText = v;
-    set(ref(db, "barra/valor"), Number(v));
-  }
+window.guardar = () => {
+  const ahora = Date.now();
+  const segundos = Number(segundosInput.value) * 1000;
+
+  set(ref(db, "barra"), {
+    nombre: nombre.value,
+    actual: Number(actual.value),
+    total: Number(total.value),
+    mensaje: mensaje.value,
+    mostrarHasta: ahora + segundos
+  });
+};
+
+const nombre = document.getElementById("nombre");
+const actual = document.getElementById("actual");
+const total = document.getElementById("total");
+const mensaje = document.getElementById("mensaje");
+const segundosInput = document.getElementById("segundos");
 </script>
 
 </body>
