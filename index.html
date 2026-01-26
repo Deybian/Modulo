@@ -1,65 +1,63 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>HUD OBS</title>
 <style>
-body {
-  background: transparent;
-  font-family: Arial, sans-serif;
+body{
+  margin:0;
+  background:transparent;
+  overflow:hidden;
+  font-family: 'Segoe UI', sans-serif;
 }
 
-.hud {
-  width: 600px;
-  color: white;
+#contenedor{
+  position:relative;
+  margin:auto;
+  top:40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.nombre {
-  font-size: 20px;
-  margin-bottom: 4px;
+#flecha{
+  position:absolute;
+  z-index:10;
+  transform:translateX(-50%);
 }
 
-.barra-base {
-  width: 100%;
-  height: 22px;
-  background: #222;
-  border: 2px solid #aaa;
-  position: relative;
+#flecha img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  filter: drop-shadow(0 0 8px rgba(255,105,180,0.8));
 }
 
-.barra-relleno {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #6cff00, #2aff00);
-  transition: width 0.5s;
+#ruleta{
+  border-radius:50%;
+  border:12px solid white;
+  box-shadow:0 0 40px rgba(255,105,180,.6);
+  transition: transform 4.5s cubic-bezier(.17,.67,.83,.67);
 }
 
-.valor {
-  position: absolute;
-  right: 10px;
-  top: 2px;
-  font-size: 14px;
-}
-
-.mensaje {
-  margin-top: 8px;
-  font-size: 18px;
-  opacity: 0;
-  transition: opacity 0.5s;
+#ganador{
+  position:absolute;
+  width:100%;
+  text-align:center;
+  font-size:32px;
+  font-weight:bold;
+  color:white;
+  text-shadow:0 0 10px #ff69b4;
 }
 </style>
 </head>
-
 <body>
-<div class="hud">
-  <div class="nombre" id="nombreBarra">---</div>
 
-  <div class="barra-base">
-    <div class="barra-relleno" id="relleno"></div>
-    <div class="valor" id="valor">0 / 0</div>
+<div id="contenedor">
+  <div id="flecha">
+    <img src="corazon.png" alt="flecha">
   </div>
-
-  <div class="mensaje" id="mensaje"></div>
+  <canvas id="ruleta"></canvas>
+  <div id="ganador"></div>
 </div>
 
 <script type="module">
@@ -79,28 +77,150 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const relleno = document.getElementById("relleno");
-const valor = document.getElementById("valor");
-const nombreBarra = document.getElementById("nombreBarra");
-const mensaje = document.getElementById("mensaje");
+const canvas = document.getElementById("ruleta");
+const ctx = canvas.getContext("2d");
+const ganadorDiv = document.getElementById("ganador");
+const flechaDiv = document.getElementById("flecha");
+const contenedor = document.getElementById("contenedor");
 
-onValue(ref(db, "barra"), snap => {
-  if (!snap.exists()) return;
+let premiosActuales = [];
+let ultimoResultado = null;
 
-  const data = snap.val();
-  const porcentaje = Math.min((data.actual / data.total) * 100, 100);
+// Calcular tamaño óptimo de ruleta según cantidad de items
+function calcularTamanoRuleta(cantidadPremios) {
+  const baseSize = 500;
+  if (cantidadPremios <= 8) return baseSize;
+  if (cantidadPremios <= 12) return 600;
+  if (cantidadPremios <= 16) return 700;
+  if (cantidadPremios <= 20) return 800;
+  return 900;
+}
 
-  nombreBarra.textContent = data.nombre;
-  relleno.style.width = porcentaje + "%";
-  valor.textContent = `${data.actual} / ${data.total}`;
+// Función para dividir texto largo en múltiples líneas
+function dividirTexto(ctx, texto, maxWidth) {
+  const palabras = texto.split(" ");
+  const lineas = [];
+  let lineaActual = palabras[0];
 
-  if (Date.now() < data.mostrarHasta) {
-    mensaje.textContent = data.mensaje;
-    mensaje.style.opacity = 1;
-  } else {
-    mensaje.style.opacity = 0;
+  for (let i = 1; i < palabras.length; i++) {
+    const palabra = palabras[i];
+    const ancho = ctx.measureText(lineaActual + " " + palabra).width;
+    if (ancho < maxWidth) {
+      lineaActual += " " + palabra;
+    } else {
+      lineas.push(lineaActual);
+      lineaActual = palabra;
+    }
   }
+  lineas.push(lineaActual);
+  return lineas;
+}
+
+function dibujarRuleta(premios){
+  premiosActuales = premios;
+  const total = premios.length;
+  
+  // Ajustar tamaño de canvas según cantidad de premios
+  const tamano = calcularTamanoRuleta(total);
+  canvas.width = tamano;
+  canvas.height = tamano;
+  
+  const radio = tamano / 2;
+  const angulo = (2 * Math.PI) / total;
+  const colores = ["#ff99cc","#ff66b2"];
+  
+  // Ajustar tamaño de flecha
+  const tamanoFlecha = tamano * 0.24; // 24% del tamaño de la ruleta
+  flechaDiv.style.width = tamanoFlecha + "px";
+  flechaDiv.style.height = tamanoFlecha + "px";
+  flechaDiv.style.top = (-tamanoFlecha / 2) + "px";
+  flechaDiv.style.left = "50%";
+  
+  // Ajustar posición del ganador
+  ganadorDiv.style.bottom = (-70 * (tamano / 500)) + "px";
+  
+  // Ajustar tamaño de contenedor
+  contenedor.style.width = tamano + "px";
+  contenedor.style.height = tamano + "px";
+  
+  // Calcular tamaño de fuente dinámico
+  let fontSize = 18;
+  if (total > 8) fontSize = 16;
+  if (total > 12) fontSize = 14;
+  if (total > 16) fontSize = 12;
+  if (total > 20) fontSize = 11;
+  
+  ctx.clearRect(0, 0, tamano, tamano);
+
+  premios.forEach((texto, i) => {
+    const start = i * angulo;
+    const end = start + angulo;
+
+    // Dibujar sector
+    ctx.beginPath();
+    ctx.moveTo(radio, radio);
+    ctx.arc(radio, radio, radio, start, end);
+    ctx.fillStyle = colores[i % 2];
+    ctx.fill();
+
+    // Dibujar texto
+    ctx.save();
+    ctx.translate(radio, radio);
+    ctx.rotate(start + angulo / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "white";
+    ctx.font = `bold ${fontSize}px Segoe UI`;
+    
+    // Calcular ancho máximo para el texto en este sector
+    const maxAnchoTexto = radio * 0.7;
+    const lineas = dividirTexto(ctx, texto, maxAnchoTexto);
+    
+    // Dibujar cada línea de texto
+    const alturaLinea = fontSize * 1.2;
+    const offsetY = -(lineas.length - 1) * alturaLinea / 2;
+    
+    lineas.forEach((linea, index) => {
+      const y = offsetY + (index * alturaLinea);
+      ctx.fillText(linea, radio * 0.88, y);
+    });
+    
+    ctx.restore();
+  });
+}
+
+onValue(ref(db,"ruleta"), snap=>{
+  const data = snap.val();
+  if(!data) return;
+
+  dibujarRuleta(data.premios);
+
+  // Verificar si es una actualización real
+  if(ultimoResultado !== null && ultimoResultado !== data.resultado){
+    canvas.style.transition = "none";
+    canvas.style.transform = "rotate(0deg)";
+    ganadorDiv.textContent = "";
+
+    void canvas.offsetHeight;
+
+    canvas.style.transition = "transform 4.5s cubic-bezier(.17,.67,.83,.67)";
+  }
+
+  const index = data.premios.indexOf(data.resultado);
+  const angulo = 360 / data.premios.length;
+  const anguloSectorGanador = (index * angulo) + (angulo / 2);
+  const giroFinal = (360 * 6) + (270 - anguloSectorGanador);
+
+  setTimeout(()=>{
+    canvas.style.transform = `rotate(${giroFinal}deg)`;
+  }, ultimoResultado !== null ? 50 : 0);
+
+  ultimoResultado = data.resultado;
+
+  setTimeout(()=>{
+    ganadorDiv.textContent = "✨ " + data.resultado + " ✨";
+  }, 8500);
 });
 </script>
+
 </body>
 </html>

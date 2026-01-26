@@ -2,32 +2,68 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Control Barra OBS</title>
+<title>Control de Ruleta</title>
+<style>
+body{font-family:Arial;padding:30px}
+input{width:100%;padding:10px;margin-bottom:10px;font-size:16px}
+button{padding:10px 15px;border:none;border-radius:8px;cursor:pointer}
+.add{background:#4CAF50;color:#fff}
+.spin{background:#ff3d7f;color:#fff;font-size:18px;margin-top:15px}
+.clear{background:#333;color:#fff;margin-left:10px}
+.item{
+  background:#ffe4ef;
+  padding:8px 12px;
+  margin:6px 0;
+  border-radius:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.delete{
+  background:#ff4d6d;
+  color:white;
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+}
+.preset{
+  background:#2196F3;
+  color:#fff;
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:14px;
+}
+</style>
 </head>
 <body>
 
-<h2>Control HUD</h2>
+<h1>🎰 Control de Ruleta</h1>
 
-<label>Nombre de la barra</label><br>
-<input id="nombre" value="META STREAM"><br><br>
+<label>Texto del item</label>
+<input id="texto" placeholder="Ej: 5 Gifted Subs">
 
-<label>Valor actual</label><br>
-<input id="actual" type="number" value="0"><br><br>
+<button class="add" onclick="agregar()">➕ Agregar</button>
 
-<label>Valor total</label><br>
-<input id="total" type="number" value="250"><br><br>
+<h3>Listas predefinidas:</h3>
+<div style="margin:15px 0;display:flex;gap:10px;flex-wrap:wrap">
+  <button class="preset" onclick="cargarKillersOriginales()">👻 Killers Originales</button>
+  <button class="preset" onclick="cargarKillersLicenciados()">🎬 Killers Licenciados</button>
+  <!-- <button class="preset" onclick="cargarKillersComunidad()">🌟 Killers Comunidad</button> -->
+  <button class="preset" onclick="cargarTodos()">📋 Todos los Killers</button>
+  <button class="preset" onclick="cargarPerks()">💎 Ventajas (Perks)</button>
+</div>
 
-<label>Mensaje temporal</label><br>
-<input id="mensaje" placeholder="Ej: Gracias Juan"><br><br>
+<h3>Items en la ruleta:</h3>
+<div id="lista"></div>
 
-<label>Duración (segundos)</label><br>
-<input id="segundos" type="number" value="5"><br><br>
-
-<button onclick="guardar()">Actualizar</button>
+<button class="spin" onclick="girar()">🎲 GIRAR RULETA</button>
+<button class="clear" onclick="limpiar()">🗑 Limpiar todo</button>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
@@ -42,24 +78,231 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-window.guardar = () => {
-  const ahora = Date.now();
-  const segundos = Number(segundosInput.value) * 1000;
+let premios = [];
 
-  set(ref(db, "barra"), {
-    nombre: nombre.value,
-    actual: Number(actual.value),
-    total: Number(total.value),
-    mensaje: mensaje.value,
-    mostrarHasta: ahora + segundos
+// Listas predefinidas de killers
+const killersOriginales = [
+  "The Trapper - El Trampero",
+  "The Wraith - El Espectro",
+  "The Hillbilly - El Pueblerino",
+  "The Nurse - La Enfermera",
+  "The Hag - La Bruja",
+  "The Doctor - El Doctor",
+  "The Huntress - La Cazadora"
+];
+
+const killersLicenciados = [
+  "The Clown - El Payaso",
+  "The Spirit - El Espíritu",
+  "The Legion - La Legión",
+  "The Plague - La Plaga",
+  "The Oni - El Oni",
+  "The Deathslinger - El Pistolero",
+  "The Blight - El Marchitador",
+  "The Twins - Los Gemelos",
+  "The Trickster - El Artista del Truco",
+  "The Artist - La Artista",
+  "The Dredge - El Dragador",
+  "The Knight - El Caballero",
+  "The Skull Merchant - La Comerciante de Calaveras",
+  "The Singularity - La Singularidad",
+  "The Unknown - El Desconocido",
+  "The Shape - Michael Myers (Halloween)",
+  "The Cannibal - Leatherface (Texas Chainsaw)",
+  "The Nightmare - Freddy Krueger",
+  "The Pig - Amanda (SAW)",
+  "The Ghost Face - Ghostface (Scream)",
+  "The Demogorgon - Stranger Things",
+  "The Executioner - Pyramid Head (Silent Hill)",
+  "The Nemesis - Resident Evil",
+  "The Mastermind - Albert Wesker (RE)",
+  "The Cenobite - Pinhead (Hellraiser)",
+  "The Onryō - Sadako (The Ring)",
+  "The Xenomorph - Alien",
+  "The Good Guy - Chucky (Child's Play)",
+  "Springtrap - Five Nights at Freddy's",
+  "The Ghoul - Ken Kaneki (Tokyo Ghoul)"
+];
+
+const killersComunidad = [
+  "Springtrap - Five Nights at Freddy's",
+  "The Ghoul - Ken Kaneki (Tokyo Ghoul)"
+];
+
+// Lista de perks
+const perks = [
+  // Hex Perks
+  "Hex: Nadie Escapa de la Muerte (NOED)",
+  "Hex: Ruina",
+  "Hex: Devora Esperanza",
+  "Hex: Terreno Embrujado",
+  "Hex: Lullaby de la Cazadora",
+  "Hex: Emoción de la Caza",
+  "Hex: Control de Multitudes",
+  "Hex: Pentimento",
+  "Hex: Indestructible (Undying)",
+  "Hex: Enfrentar la Oscuridad",
+  "Hex: Destino Retorcido",
+  "Hex: Dos Pueden Jugar",
+  "Hex: Nada Más que Miseria",
+  // Scourge Hook Perks
+  "Gancho Atormentado: Resonancia del Dolor",
+  "Gancho Atormentado: Heridas que Lloran",
+  "Gancho Atormentado: Regalo del Dolor",
+  "Gancho Atormentado: Monstruoso Santuario",
+  "Gancho Atormentado: Inundación de Furia",
+  // Perks de Información / Rastreo
+  "Barbacoa y Chile",
+  "Perseguidor Letal",
+  "Ningún Lugar donde Esconderse",
+  "Revelación de la Oscuridad",
+  "Discordancia",
+  "Susurros",
+  "Depredador",
+  "Sabueso",
+  "Acechador de Ciervos",
+  "Imperativo Territorial",
+  "Amante de los Objetos (Hoarder)",
+  "Rencor",
+  "Oscura Devoción",
+  "Llamada de una Enfermera",
+  // Perks de Control de Generadores
+  "Intervención Corrupta",
+  "Explosión",
+  "Llamada de Salmuera",
+  "Sobrecarga",
+  "Oposición",
+  "Deadlock",
+  "Interruptor del Hombre Muerto",
+  "Sacudida (Surge/Jolt)",
+  "Técnico",
+  "Pop Goes the Weasel",
+  "Limitaciones Crueles",
+  "Baterías Incluidas",
+  // Perks de Persecución
+  "Lo Mejor para el Final",
+  "Golpe de Gracia",
+  "Bamboozle",
+  "Fuerza Brutal",
+  "Resistente (Enduring)",
+  "Bestia de Presa",
+  "Agitación",
+  "Disolución",
+  "Brutalidad Rápida",
+  "Arrogancia Oscura",
+  // Perks de Presión / Castigo
+  "Miedo Infeccioso",
+  "Ecos de Sangre",
+  "Luz Moribunda",
+  "Guardián de Sangre",
+  "Recordarme",
+  "Penitencia Forzada",
+  "Duda Forzada",
+  "Vigilancia",
+  "Dominancia",
+  // Perks Generales Clásicas
+  "Mano de Hierro",
+  "Insidioso",
+  "Perturbador",
+  "Amargura Murmurante",
+  "Devorador de Energía",
+  "Knock Out",
+  "Territorial Imperative"
+];
+
+const listaDiv = document.getElementById("lista");
+const textoInput = document.getElementById("texto");
+
+function guardarFirebase(){
+  set(ref(db,"ruleta/premios"), premios);
+}
+
+function renderLista(){
+  listaDiv.innerHTML="";
+  premios.forEach((p,i)=>{
+    const d=document.createElement("div");
+    d.className="item";
+    d.innerHTML = `
+      <span>${p}</span>
+      <button class="delete" onclick="eliminar(${i})">❌</button>
+    `;
+    listaDiv.appendChild(d);
+  });
+}
+
+window.agregar = () => {
+  const t = textoInput.value.trim();
+  if(!t) return;
+  premios.push(t);
+  textoInput.value="";
+  renderLista();
+  guardarFirebase();
+};
+
+window.eliminar = (index) => {
+  premios.splice(index,1);
+  renderLista();
+  guardarFirebase();
+};
+
+window.limpiar = () => {
+  premios = [];
+  renderLista();
+  guardarFirebase();
+};
+
+window.girar = () => {
+  if(premios.length === 0){
+    alert("⚠️ Agrega items a la ruleta primero");
+    return;
+  }
+
+  // Seleccionar ganador aleatorio
+  const ganador = premios[Math.floor(Math.random() * premios.length)];
+
+  // Escribir en Firebase
+  set(ref(db,"ruleta"), {
+    premios: premios,
+    resultado: ganador
   });
 };
 
-const nombre = document.getElementById("nombre");
-const actual = document.getElementById("actual");
-const total = document.getElementById("total");
-const mensaje = document.getElementById("mensaje");
-const segundosInput = document.getElementById("segundos");
+window.cargarKillersOriginales = () => {
+  premios = [...killersOriginales];
+  renderLista();
+  guardarFirebase();
+};
+
+window.cargarKillersLicenciados = () => {
+  premios = [...killersLicenciados];
+  renderLista();
+  guardarFirebase();
+};
+
+// window.cargarKillersComunidad = () => {
+//   premios = [...killersComunidad];
+//   renderLista();
+//   guardarFirebase();
+// };
+
+window.cargarTodos = () => {
+  premios = [...killersOriginales, ...killersLicenciados];
+  renderLista();
+  guardarFirebase();
+};
+
+window.cargarPerks = () => {
+  premios = [...perks];
+  renderLista();
+  guardarFirebase();
+};
+
+onValue(ref(db,"ruleta/premios"), snap=>{
+  if(snap.exists()){
+    premios = snap.val();
+    renderLista();
+  }
+});
 </script>
 
 </body>
