@@ -41,12 +41,32 @@ body{
 
 #ganador{
   position:absolute;
-  width:100%;
+  z-index:20;
+  width:80%;
   text-align:center;
-  font-size:32px;
+  font-size:48px;
   font-weight:bold;
   color:white;
-  text-shadow:0 0 10px #ff69b4;
+  text-shadow:
+    0 0 20px #ff69b4,
+    0 0 40px #ff1493,
+    2px 2px 4px rgba(0,0,0,0.8);
+  background:rgba(255,20,147,0.9);
+  padding:30px 40px;
+  border-radius:20px;
+  border:4px solid white;
+  box-shadow:0 0 60px rgba(255,105,180,0.9);
+  opacity:0;
+  transform:scale(0.5);
+  transition:all 0.5s ease-out;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%) scale(0.5);
+}
+
+#ganador.mostrar{
+  opacity:1;
+  transform:translate(-50%, -50%) scale(1);
 }
 </style>
 </head>
@@ -85,6 +105,38 @@ const contenedor = document.getElementById("contenedor");
 
 let premiosActuales = [];
 let ultimoResultado = null;
+let audioContext = null;
+let intervaloSonido = null;
+
+// Inicializar AudioContext
+function inicializarAudio() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+// Función para generar sonido de "tick"
+function reproducirTick() {
+  if (!audioContext) inicializarAudio();
+  
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  
+  // Configurar el sonido
+  oscillator.type = 'sine';
+  oscillator.frequency.value = 800; // Frecuencia del tick
+  
+  // Configurar el volumen
+  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+  
+  // Reproducir
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.05);
+}
 
 // Calcular tamaño óptimo de ruleta según cantidad de items
 function calcularTamanoRuleta(cantidadPremios) {
@@ -136,9 +188,6 @@ function dibujarRuleta(premios){
   flechaDiv.style.top = (-tamanoFlecha / 2) + "px";
   flechaDiv.style.left = "50%";
   
-  // Ajustar posición del ganador
-  ganadorDiv.style.bottom = (-70 * (tamano / 500)) + "px";
-  
   // Ajustar tamaño de contenedor
   contenedor.style.width = tamano + "px";
   contenedor.style.height = tamano + "px";
@@ -188,6 +237,40 @@ function dibujarRuleta(premios){
   });
 }
 
+// Función para reproducir ticks durante el giro
+function iniciarTicks(duracionMs) {
+  // Limpiar intervalo anterior si existe
+  if (intervaloSonido) {
+    clearInterval(intervaloSonido);
+  }
+  
+  inicializarAudio();
+  
+  // Empezar con ticks lentos y acelerar
+  let intervalo = 200; // Milisegundos entre ticks
+  const tiempoInicio = Date.now();
+  
+  function programarTick() {
+    const tiempoTranscurrido = Date.now() - tiempoInicio;
+    const progreso = tiempoTranscurrido / duracionMs;
+    
+    if (progreso >= 1) {
+      // Terminar
+      if (intervaloSonido) clearTimeout(intervaloSonido);
+      return;
+    }
+    
+    reproducirTick();
+    
+    // Calcular próximo intervalo (más rápido al principio, más lento al final)
+    intervalo = 50 + (150 * (1 - progreso));
+    
+    intervaloSonido = setTimeout(programarTick, intervalo);
+  }
+  
+  programarTick();
+}
+
 onValue(ref(db,"ruleta"), snap=>{
   const data = snap.val();
   if(!data) return;
@@ -199,10 +282,14 @@ onValue(ref(db,"ruleta"), snap=>{
     canvas.style.transition = "none";
     canvas.style.transform = "rotate(0deg)";
     ganadorDiv.textContent = "";
+    ganadorDiv.classList.remove("mostrar");
 
     void canvas.offsetHeight;
 
     canvas.style.transition = "transform 4.5s cubic-bezier(.17,.67,.83,.67)";
+    
+    // Iniciar sonidos de tick
+    iniciarTicks(4500);
   }
 
   const index = data.premios.indexOf(data.resultado);
@@ -216,9 +303,11 @@ onValue(ref(db,"ruleta"), snap=>{
 
   ultimoResultado = data.resultado;
 
+  // Mostrar ganador en el centro después de que termine el giro
   setTimeout(()=>{
     ganadorDiv.textContent = "✨ " + data.resultado + " ✨";
-  }, 8500);
+    ganadorDiv.classList.add("mostrar");
+  }, 7300);
 });
 </script>
 

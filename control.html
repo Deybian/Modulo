@@ -46,11 +46,25 @@ button{padding:10px 15px;border:none;border-radius:8px;cursor:pointer}
 
 <button class="add" onclick="agregar()">➕ Agregar</button>
 
+<h3>🚫 Excluir items del sorteo:</h3>
+<div style="margin-bottom:10px">
+  <label>Item 1 a excluir:</label>
+  <select id="excluir1" style="width:100%;padding:10px;font-size:16px;margin-bottom:5px;border-radius:8px;">
+    <option value="">-- Ninguno --</option>
+  </select>
+  
+  <label>Item 2 a excluir:</label>
+  <select id="excluir2" style="width:100%;padding:10px;font-size:16px;margin-bottom:10px;border-radius:8px;">
+    <option value="">-- Ninguno --</option>
+  </select>
+</div>
+<button class="spin" onclick="girarConExclusiones()">🎲 GIRAR CON EXCLUSIONES</button>
+
 <h3>Listas predefinidas:</h3>
 <div style="margin:15px 0;display:flex;gap:10px;flex-wrap:wrap">
   <button class="preset" onclick="cargarKillersOriginales()">👻 Killers Originales</button>
   <button class="preset" onclick="cargarKillersLicenciados()">🎬 Killers Licenciados</button>
-  <!-- <button class="preset" onclick="cargarKillersComunidad()">🌟 Killers Comunidad</button> -->
+  <button class="preset" onclick="cargarKillersComunidad()">🌟 Killers Comunidad</button>
   <button class="preset" onclick="cargarTodos()">📋 Todos los Killers</button>
   <button class="preset" onclick="cargarPerks()">💎 Ventajas (Perks)</button>
 </div>
@@ -84,14 +98,11 @@ let premios = [];
 const killersOriginales = [
   "The Trapper - El Trampero",
   "The Wraith - El Espectro",
-  "The Hillbilly - El Pueblerino",
+  "The Hillbilly - El Paleto",
   "The Nurse - La Enfermera",
   "The Hag - La Bruja",
   "The Doctor - El Doctor",
-  "The Huntress - La Cazadora"
-];
-
-const killersLicenciados = [
+  "The Huntress - La Cazadora",
   "The Clown - El Payaso",
   "The Spirit - El Espíritu",
   "The Legion - La Legión",
@@ -106,7 +117,10 @@ const killersLicenciados = [
   "The Knight - El Caballero",
   "The Skull Merchant - La Comerciante de Calaveras",
   "The Singularity - La Singularidad",
-  "The Unknown - El Desconocido",
+  "The Unknown - El Desconocido"
+];
+
+const killersLicenciados = [
   "The Shape - Michael Myers (Halloween)",
   "The Cannibal - Leatherface (Texas Chainsaw)",
   "The Nightmare - Freddy Krueger",
@@ -119,9 +133,7 @@ const killersLicenciados = [
   "The Cenobite - Pinhead (Hellraiser)",
   "The Onryō - Sadako (The Ring)",
   "The Xenomorph - Alien",
-  "The Good Guy - Chucky (Child's Play)",
-  "Springtrap - Five Nights at Freddy's",
-  "The Ghoul - Ken Kaneki (Tokyo Ghoul)"
+  "The Good Guy - Chucky (Child's Play)"
 ];
 
 const killersComunidad = [
@@ -212,9 +224,24 @@ const perks = [
 
 const listaDiv = document.getElementById("lista");
 const textoInput = document.getElementById("texto");
+const excluir1Select = document.getElementById("excluir1");
+const excluir2Select = document.getElementById("excluir2");
 
 function guardarFirebase(){
   set(ref(db,"ruleta/premios"), premios);
+}
+
+function actualizarSelects(){
+  // Actualizar ambos selects de exclusión
+  [excluir1Select, excluir2Select].forEach(select => {
+    select.innerHTML = '<option value="">-- Ninguno --</option>';
+    premios.forEach((p, i) => {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = p;
+      select.appendChild(option);
+    });
+  });
 }
 
 function renderLista(){
@@ -228,6 +255,7 @@ function renderLista(){
     `;
     listaDiv.appendChild(d);
   });
+  actualizarSelects();
 }
 
 window.agregar = () => {
@@ -267,6 +295,50 @@ window.girar = () => {
   });
 };
 
+window.girarConExclusiones = () => {
+  if(premios.length === 0){
+    alert("⚠️ Agrega items a la ruleta primero");
+    return;
+  }
+
+  const excluido1 = excluir1Select.value;
+  const excluido2 = excluir2Select.value;
+  
+  // Validar que no sean el mismo item
+  if(excluido1 !== "" && excluido1 === excluido2){
+    alert("⚠️ Los dos items excluidos no pueden ser el mismo");
+    return;
+  }
+
+  // Crear array de índices válidos (sin los excluidos)
+  const indicesValidos = [];
+  premios.forEach((p, i) => {
+    if(i.toString() !== excluido1 && i.toString() !== excluido2){
+      indicesValidos.push(i);
+    }
+  });
+
+  // Validar que queden al menos 1 item válido
+  if(indicesValidos.length === 0){
+    alert("⚠️ Debes dejar al menos un item sin excluir");
+    return;
+  }
+
+  // Seleccionar ganador aleatorio de los items válidos
+  const indiceGanador = indicesValidos[Math.floor(Math.random() * indicesValidos.length)];
+  const ganador = premios[indiceGanador];
+
+  // Escribir en Firebase
+  set(ref(db,"ruleta"), {
+    premios: premios,
+    resultado: ganador
+  });
+
+  // Opcional: resetear los selects
+  excluir1Select.value = "";
+  excluir2Select.value = "";
+};
+
 window.cargarKillersOriginales = () => {
   premios = [...killersOriginales];
   renderLista();
@@ -279,14 +351,14 @@ window.cargarKillersLicenciados = () => {
   guardarFirebase();
 };
 
-// window.cargarKillersComunidad = () => {
-//   premios = [...killersComunidad];
-//   renderLista();
-//   guardarFirebase();
-// };
+window.cargarKillersComunidad = () => {
+  premios = [...killersComunidad];
+  renderLista();
+  guardarFirebase();
+};
 
 window.cargarTodos = () => {
-  premios = [...killersOriginales, ...killersLicenciados];
+  premios = [...killersOriginales, ...killersLicenciados, ...killersComunidad];
   renderLista();
   guardarFirebase();
 };
