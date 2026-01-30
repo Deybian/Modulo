@@ -67,6 +67,8 @@ button{padding:10px 15px;border:none;border-radius:8px;cursor:pointer}
   <button class="preset" onclick="cargarKillersComunidad()">🌟 Killers Comunidad</button>
   <button class="preset" onclick="cargarTodos()">📋 Todos los Killers</button>
   <button class="preset" onclick="cargarPerks()">💎 Ventajas (Perks)</button>
+  <button class="preset" onclick="cargarPartidas()">🎮 Partidas</button>
+  <button class="preset" onclick="cargarNombres()">👤 Nombres</button>
 </div>
 
 <h3>Items en la ruleta:</h3>
@@ -94,22 +96,6 @@ const db = getDatabase(app);
 
 let premios = [];
 
-// // Listas predefinidas de killers
-// const killersOriginales = [
-//   "The Trapper - El Trampero",
-//   "The Wraith - El Espectro",
-//   "The Hillbilly - El Pueblerino",
-//   "The Nurse - La Enfermera",
-//   "The Hag - La Bruja",
-//   "The Doctor - El Doctor",
-//   "The Huntress - La Cazadora",
-//   "The Legion - La Legión",
-//   "The Plague - La Plaga",
-//   "The Trickster - El Embaucador",,
-//   "The Knight - El Caballero",
-//   "The Xenomorfo - El Xenomorfo"
-// ];
-
 // Listas predefinidas de killers
 const killersOriginales = [
   "El Trampero",
@@ -124,7 +110,6 @@ const killersOriginales = [
   "El Caballero",
   "El Xenomorfo"
 ];
-
 
 const killersLicenciados = [
   "The Shape - Michael Myers (Halloween)",
@@ -146,7 +131,6 @@ const killersComunidad = [
   "Springtrap - Five Nights at Freddy's",
   "The Ghoul - Ken Kaneki (Tokyo Ghoul)"
 ];
-
 
 // Lista de perks
 const perks = [
@@ -174,7 +158,7 @@ const perks = [
   "Terror contagioso",
   "Toma una decisión",
   "Toque lánguido",
-  "Tormenta despiadada",
+  "Tormento despiadado",
   "Trueno sísmico",
   "Tácticas zanshin",
   "Unidos por siempre",
@@ -288,6 +272,29 @@ const perks = [
   "Pim pam pum"
 ];
 
+const partidas = [
+  "1 partida entera",
+  "1 partida",
+  "2 partidas",
+  "3 partidas",
+  "4 partidas",
+  "5 partidas",
+  "1 partida",
+  "2 partidas",
+  "1 partida",
+  "1 partida"
+];
+
+const nombres = [
+  "Doom",
+  "Gun",
+  "Dead",
+  "Charlie",
+  "Victor",
+  "Estruvulucu",
+  "King",
+  "Scarleth"
+];
 
 const listaDiv = document.getElementById("lista");
 const textoInput = document.getElementById("texto");
@@ -432,6 +439,18 @@ window.cargarTodos = () => {
 
 window.cargarPerks = () => {
   premios = [...perks];
+  renderLista();
+  guardarFirebase();
+};
+
+window.cargarPartidas = () => {
+  premios = [...partidas];
+  renderLista();
+  guardarFirebase();
+};
+
+window.cargarNombres = () => {
+  premios = [...nombres];
   renderLista();
   guardarFirebase();
 };
