@@ -69,6 +69,7 @@ button{padding:10px 15px;border:none;border-radius:8px;cursor:pointer}
   <button class="preset" onclick="cargarPerks()">💎 Ventajas (Perks)</button>
   <button class="preset" onclick="cargarPartidas()">🎮 Partidas</button>
   <button class="preset" onclick="cargarNombres()">👤 Nombres</button>
+  <button class="preset" onclick="cargarMapas()">👤 Mapas</button>
 </div>
 
 <h3>Items en la ruleta:</h3>
@@ -296,6 +297,74 @@ const nombres = [
   "Scarleth"
 ];
 
+const mapas = [
+  "Torre de Carbón",
+  "Fundición de la Miseria",
+  "Depósito Quejumbroso",
+  "Bosque Refugio",
+  "Pozo de Asfixia",
+
+  "Última Morada de Azarov",
+  "Refugio Sangriento",
+  "Gasolinera",
+  "Taller Ruinoso",
+  "Depósito de Desguace",
+
+  "Matadero Pestilente",
+  "Campos Podridos",
+  "Granja Fracturada",
+  "Arroyo del Tormento",
+  "Casa de los Thompson",
+
+  "Capilla del Padre Campbell",
+  "Sala de Trastornados",
+
+  "Despensa Sombría",
+  "La Rosa Pálida",
+
+  "Calle Lampkin",
+
+  "Teatro de Tratamiento",
+
+  "Morada Maternal",
+  "Templo de la Purgación",
+
+  "Preescolar Badham I",
+  "Preescolar Badham II",
+  "Preescolar Badham III",
+  "Preescolar Badham IV",
+  "Preescolar Badham V",
+
+  "El Juego",
+
+  "Residencia Familiar",
+  "Santuario de la Ira",
+
+  "Resort Monte Ormond",
+
+  "Complejo Subterráneo",
+
+  "Escuela Primaria Midwich",
+
+  "Comisaría de Raccoon City Este",
+  "Comisaría de Raccoon City Oeste",
+
+  "Saloon Dead Dawg",
+
+  "Jardín de la Alegría",
+
+  "Plaza Desgarrada",
+
+  "Aviario de Cuervos",
+
+  "Aterrizaje Toba",
+  "Ruinas Olvidadas",
+
+  "Naufragio Nostromo",
+
+  "Plaza Greenville"
+];
+
 const listaDiv = document.getElementById("lista");
 const textoInput = document.getElementById("texto");
 const excluir1Select = document.getElementById("excluir1");
@@ -451,6 +520,12 @@ window.cargarPartidas = () => {
 
 window.cargarNombres = () => {
   premios = [...nombres];
+  renderLista();
+  guardarFirebase();
+};
+
+window.cargarMapas = () => {
+  premios = [...mapas];
   renderLista();
   guardarFirebase();
 };
