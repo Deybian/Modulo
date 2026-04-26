@@ -4,539 +4,453 @@
 <meta charset="UTF-8">
 <title>Control de Ruleta</title>
 <style>
-body{font-family:Arial;padding:30px}
-input{width:100%;padding:10px;margin-bottom:10px;font-size:16px}
-button{padding:10px 15px;border:none;border-radius:8px;cursor:pointer}
-.add{background:#4CAF50;color:#fff}
-.spin{background:#ff3d7f;color:#fff;font-size:18px;margin-top:15px}
-.clear{background:#333;color:#fff;margin-left:10px}
-.item{
-  background:#ffe4ef;
-  padding:8px 12px;
-  margin:6px 0;
-  border-radius:6px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.delete{
-  background:#ff4d6d;
-  color:white;
-  padding:4px 8px;
-  border-radius:6px;
-  font-size:12px;
-}
-.preset{
-  background:#2196F3;
-  color:#fff;
-  padding:8px 12px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  font-size:14px;
-}
+*{box-sizing:border-box}
+body{font-family:Arial;padding:20px;max-width:900px;margin:0 auto}
+h1{margin-bottom:20px}
+h2{margin:0 0 12px}
+h3{margin:0 0 10px;font-size:15px}
+input,select,textarea{width:100%;padding:9px 11px;margin-bottom:10px;font-size:14px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
+textarea{resize:vertical}
+button{padding:8px 14px;border:1px solid #ccc;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500}
+button:hover{opacity:0.85}
+.btn-primary{background:#2196F3;color:#fff;border-color:#2196F3}
+.btn-success{background:#4CAF50;color:#fff;border-color:#4CAF50}
+.btn-danger{background:#ff4d6d;color:#fff;border-color:#ff4d6d}
+.btn-spin{background:#ff3d7f;color:#fff;font-size:16px;width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px}
+.btn-clear{background:#333;color:#fff;border-color:#333;width:100%;padding:10px;margin-top:6px;border-radius:8px}
+
+/* Layout dos columnas */
+.layout{display:grid;grid-template-columns:280px 1fr;gap:16px;margin-top:16px}
+
+/* Panel */
+.panel{background:#fff;border:1px solid #ddd;border-radius:12px;padding:14px}
+
+/* Lista de listas */
+.lista-item{display:flex;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:4px}
+.lista-item:hover{background:#f5f5f5}
+.lista-item.selected{background:#e3f2fd;border-color:#90caf9}
+.lista-nombre{flex:1;font-size:14px}
+.lista-count{font-size:11px;color:#999;margin-right:6px}
+.tag-pre{font-size:10px;background:#fff3e0;color:#e65100;padding:1px 6px;border-radius:99px;margin-left:4px}
+
+/* Items */
+.item-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #eee;border-radius:8px;margin-bottom:4px}
+.item-text{flex:1;font-size:13px}
+.item-edit-input{flex:1;font-size:13px;padding:3px 7px;margin:0}
+
+/* Modal */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center}
+#modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px;width:400px;max-width:95vw}
+.modal h3{font-size:16px;margin-bottom:12px}
+
+/* Ruleta tab */
+.tab-bar{display:flex;gap:8px;margin-bottom:16px}
+.tab{padding:8px 16px;border-radius:8px;border:1px solid #ccc;cursor:pointer;font-size:14px}
+.tab.active{background:#ff3d7f;color:#fff;border-color:#ff3d7f}
+
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.sep{height:1px;background:#eee;margin:10px 0}
+.empty{text-align:center;color:#aaa;font-size:13px;padding:2rem 0}
+#status{font-size:12px;color:#888;text-align:right;margin-top:4px}
+
+/* Excluir */
+.excluir-row{display:flex;gap:8px}
+.excluir-row select{margin-bottom:0}
+
+.item-ruleta{background:#ffe4ef;padding:7px 12px;margin:5px 0;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
+.item-ruleta button{background:#ff4d6d;color:#fff;padding:3px 8px;border:none;border-radius:6px;font-size:12px}
 </style>
 </head>
 <body>
 
 <h1>🎰 Control de Ruleta</h1>
 
-<label>Texto del item</label>
-<input id="texto" placeholder="Ej: 5 Gifted Subs">
-
-<button class="add" onclick="agregar()">➕ Agregar</button>
-
-<h3>🚫 Excluir items del sorteo:</h3>
-<div style="margin-bottom:10px">
-  <label>Item 1 a excluir:</label>
-  <select id="excluir1" style="width:100%;padding:10px;font-size:16px;margin-bottom:5px;border-radius:8px;">
-    <option value="">-- Ninguno --</option>
-  </select>
-  
-  <label>Item 2 a excluir:</label>
-  <select id="excluir2" style="width:100%;padding:10px;font-size:16px;margin-bottom:10px;border-radius:8px;">
-    <option value="">-- Ninguno --</option>
-  </select>
-</div>
-<button class="spin" onclick="girarConExclusiones()">🎲 GIRAR CON EXCLUSIONES</button>
-
-<h3>Listas predefinidas:</h3>
-<div style="margin:15px 0;display:flex;gap:10px;flex-wrap:wrap">
-  <button class="preset" onclick="cargarKillersOriginales()">👻 Killers Originales</button>
-  <button class="preset" onclick="cargarKillersLicenciados()">🎬 Killers Licenciados</button>
-  <button class="preset" onclick="cargarKillersComunidad()">🌟 Killers Comunidad</button>
-  <button class="preset" onclick="cargarTodos()">📋 Todos los Killers</button>
-  <button class="preset" onclick="cargarPerks()">💎 Ventajas (Perks)</button>
-  <button class="preset" onclick="cargarPartidas()">🎮 Partidas</button>
-  <button class="preset" onclick="cargarNombres()">👤 Nombres</button>
-  <button class="preset" onclick="cargarMapas()">👤 Mapas</button>
+<div class="tab-bar">
+  <button class="tab active" onclick="cambiarTab('listas')">📋 Gestionar listas</button>
+  <button class="tab" onclick="cambiarTab('ruleta')">🎲 Ruleta</button>
 </div>
 
-<h3>Items en la ruleta:</h3>
-<div id="lista"></div>
+<!-- ===== TAB: LISTAS ===== -->
+<div id="tab-listas">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <h2>Mis listas</h2>
+    <button class="btn-success" onclick="abrirModalNueva()">+ Nueva lista</button>
+  </div>
 
-<button class="spin" onclick="girar()">🎲 GIRAR RULETA</button>
-<button class="clear" onclick="limpiar()">🗑 Limpiar todo</button>
+  <div class="layout">
+    <!-- Panel izquierdo: lista de listas -->
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="margin:0">Listas guardadas</h3>
+        <span id="total-listas" style="font-size:12px;color:#999">0</span>
+      </div>
+      <div id="listas-container"><div class="empty">Cargando...</div></div>
+    </div>
+
+    <!-- Panel derecho: detalle -->
+    <div class="panel">
+      <div id="detalle-vacio" class="empty" style="padding:3rem 0">
+        Selecciona una lista para ver sus items
+      </div>
+      <div id="detalle-contenido" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <h3 id="detalle-titulo" style="margin:0"></h3>
+            <span id="detalle-count" style="font-size:12px;color:#888"></span>
+          </div>
+          <div class="actions">
+            <button class="btn-primary" onclick="usarListaSeleccionada()">▶ Usar en ruleta</button>
+            <button onclick="editarListaSeleccionada()">✏️ Editar</button>
+            <button class="btn-danger" onclick="eliminarListaSeleccionada()">🗑</button>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <input id="nuevo-item-input" placeholder="Agregar item..." style="margin:0;flex:1" onkeydown="if(event.key==='Enter')agregarItemDetalle()">
+          <button class="btn-success" onclick="agregarItemDetalle()">+ Agregar</button>
+        </div>
+        <div id="items-container"></div>
+      </div>
+    </div>
+  </div>
+  <div id="status"></div>
+</div>
+
+<!-- ===== TAB: RULETA ===== -->
+<div id="tab-ruleta" style="display:none">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="panel">
+      <h3>Agregar item manual</h3>
+      <input id="texto" placeholder="Ej: 5 Gifted Subs">
+      <button class="btn-success" onclick="agregar()">➕ Agregar</button>
+    </div>
+    <div class="panel">
+      <h3>Excluir del sorteo</h3>
+      <div class="excluir-row">
+        <select id="excluir1"><option value="">-- Ninguno --</option></select>
+        <select id="excluir2"><option value="">-- Ninguno --</option></select>
+      </div>
+      <button class="btn-primary" onclick="girarConExclusiones()">🎲 Girar con exclusiones</button>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:12px">
+    <h3>Items en la ruleta (<span id="count-ruleta">0</span>)</h3>
+    <div id="lista-ruleta"></div>
+    <button class="btn-spin" onclick="girar()">🎲 GIRAR RULETA</button>
+    <button class="btn-clear" onclick="limpiar()">🗑 Limpiar todo</button>
+  </div>
+</div>
+
+<!-- Modal crear/editar lista -->
+<div id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Nueva lista</h3>
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Nombre</label>
+    <input id="modal-nombre" placeholder="Ej: Mapas DBD">
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">Items (uno por línea)</label>
+    <textarea id="modal-items" rows="10" placeholder="Item 1&#10;Item 2&#10;Item 3"></textarea>
+    <div class="actions" style="margin-top:6px">
+      <button class="btn-primary" onclick="guardarModal()">💾 Guardar</button>
+      <button onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove, push, update } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
-  authDomain: "obs-barra.firebaseapp.com",
-  databaseURL: "https://obs-barra-default-rtdb.firebaseio.com",
-  projectId: "obs-barra",
-  storageBucket: "obs-barra.firebasestorage.app",
-  messagingSenderId: "515697971120",
-  appId: "1:515697971120:web:6cd07a5f10c46feef85075"
+const cfg = {
+  apiKey:"AIzaSyCxo_ndD5H5UM-q-qRA2jlikT8kXuvqEKA",
+  authDomain:"obs-barra.firebaseapp.com",
+  databaseURL:"https://obs-barra-default-rtdb.firebaseio.com",
+  projectId:"obs-barra",
+  storageBucket:"obs-barra.firebasestorage.app",
+  messagingSenderId:"515697971120",
+  appId:"1:515697971120:web:6cd07a5f10c46feef85075"
 };
 
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(cfg);
 const db = getDatabase(app);
 
-let premios = [];
+let listas = {};
+let premiosRuleta = [];
+let listaSelId = null;
+let modoModal = 'nueva';
 
-// Listas predefinidas de killers
-const killersOriginales = [
-  "El Trampero",
-  "El Espectro",
-  "El Pueblerino",
-  "La Enfermera",
-  "La Bruja",
-  "El Doctor",
-  "La Cazadora",
-  "La Legión",
-  "El Embaucador",
-  "El Caballero",
-  "El Xenomorfo"
-];
+// Listas predefinidas (solo locales, no se guardan en Firebase)
+const PREDEFINIDAS = {
+  "pre-killers-orig": { nombre:"Killers originales", predefinida:true, items:["El Trampero","El Espectro","El Pueblerino","La Enfermera","La Bruja","El Doctor","La Cazadora","La Legión","El Embaucador","El Caballero","El Xenomorfo"] },
+  "pre-killers-lic": { nombre:"Killers licenciados", predefinida:true, items:["The Shape - Michael Myers","The Cannibal - Leatherface","The Nightmare - Freddy Krueger","The Pig - Amanda","The Ghost Face","The Demogorgon","The Executioner - Pyramid Head","The Nemesis","The Mastermind - Wesker","The Cenobite - Pinhead","The Onryō - Sadako","The Xenomorph - Alien","The Good Guy - Chucky"] },
+  "pre-killers-com": { nombre:"Killers comunidad", predefinida:true, items:["Springtrap - Five Nights at Freddy's","The Ghoul - Ken Kaneki"] },
+  "pre-partidas": { nombre:"Partidas", predefinida:true, items:["1 stream entero","1 partida","2 partidas","3 partidas","4 partidas","5 partidas","1 partida","2 partidas","1 partida","1 partida"] },
+  "pre-nombres": { nombre:"Nombres", predefinida:true, items:["Doom","Gun","Dead","Charlie","Victor","Estruvulucu","King","Scarleth"] },
+  "pre-mapas": { nombre:"Mapas", predefinida:true, items:["Torre de Carbón","Fundición de la Miseria","Depósito de los Lamentos","Bosque Refugio","Foso de Asfixia","Último descanso de Azarov","Refugio sangriento","Gasolinera","Tienda destrozada","Patio de chatarrería","Matadero rancio","Campos podridos","Cobertizo fracturado","Arroyo del tormento","Casa Thompson","Capilla del Padre Campbell","Sala perturbada","Despensa siniestra","La Rosa pálida","Calle Lampkin","Teatro de tratamiento","Morada materna","Templo de la purgación","Preescolar Badham I","Preescolar Badham II","Preescolar Badham III","Preescolar Badham IV","Preescolar Badham V","El Juego","Residencia familiar","Santuario de la ira","Complejo Monte Ormond","Complejo subterráneo","Escuela primaria Midwich","Comisaría de Raccoon City Este","Comisaría de Raccoon City Oeste","Cantina del Perro Muerto","Jardín de la alegría","Plaza desgarrada","Nido de cuervos","Aterrizaje Toba","Ruinas olvidadas","Naufragio Nostromo","Delirio del Embaucador"] },
+  "pre-perks": { nombre:"Ventajas (Perks)", predefinida:true, items:["Presencia abrumadora","Presencia perturbadora","Quebrantamentes","Recuérdame","Rencor","Reparador","Resistente","Restricción cruel","Sabueso de sangre","Senda del tormento","Sin piedad","Sin restricciones","Sin salida","Soberbia","Sobrecarga / el doctor","Sobrecarga / el demogorgon","Soy todo oídos","Supervisión","Tanatofobia","Temblores trepidantes","Terminal","Terror contagioso","Toma una decisión","Toque lánguido","Tormento despiadado","Trueno sísmico","Tácticas zanshin","Unidos por siempre","Vocación de enfermera","Voracidad","¡Plaf!","Abrazo de la muerte","Acechador de ciervos","Acumulador","Agitación","Aliento","Amigos hasta el fin","Anatomía superior","Anuncio de salmuera","Aprendizaje automatizado","Apretón de hierro","Arma definitiva","Armonización de tejido","Arrogancia oscura","Atadura mortal","Baterías incluidas","Bestia de presa","Brutalidad veloz","Cabeza dentada","Caos","Carnicero chapucero","Codicia humana","Conciencia de estar despiertos","Contacto séptico","Coulrofobia","Depredación","Desasosiego","Desatado","Desconcierto","Deslumbrante","Devoción oscura","Discordancia","Disolución","Dominación","Doncella de hierro","Duda forzada","Eco de sangre","Enfurecimiento","Erupción","Esperanza rota","Espías de las sombras","Fuerza brutal","Furia ciega","Furia espiritual","Golpe de gracia","Guardián de sangre","Hijo de la luz","Hijo de las sombras","Histeria","Hora de la cacería","Implacable","Imprevisto","Inacabado","Influencia","Insidia","Instinto alienígena","Instinto territorial","Intervención corrupta","Jugar con la comida","Lo mejor para el final","Luz que agoniza","Límites genéticos","Maleficio: arrepentimiento","Maleficio: ruina","Maleficio: tierra embrujada","Monitorización y abuso","Muerte de franklin","Murmullo amargo","Murmullos","Nadie es libre","No hay dónde esconderse","Noqueo","Némesis","Ojo errante","Opresión","Oscuridad revelada","Parrillada y chile","Penitencia forzada","Persecución furtiva","Perseguidor letal","Pim pam pum"] }
+};
 
-const killersLicenciados = [
-  "The Shape - Michael Myers (Halloween)",
-  "The Cannibal - Leatherface (Texas Chainsaw)",
-  "The Nightmare - Freddy Krueger",
-  "The Pig - Amanda (SAW)",
-  "The Ghost Face - Ghostface (Scream)",
-  "The Demogorgon - Stranger Things",
-  "The Executioner - Pyramid Head (Silent Hill)",
-  "The Nemesis - Resident Evil",
-  "The Mastermind - Albert Wesker (RE)",
-  "The Cenobite - Pinhead (Hellraiser)",
-  "The Onryō - Sadako (The Ring)",
-  "The Xenomorph - Alien",
-  "The Good Guy - Chucky (Child's Play)"
-];
+function status(msg){ document.getElementById('status').textContent = msg; }
 
-const killersComunidad = [
-  "Springtrap - Five Nights at Freddy's",
-  "The Ghoul - Ken Kaneki (Tokyo Ghoul)"
-];
+function todasLasListas(){ return { ...PREDEFINIDAS, ...listas }; }
 
-// Lista de perks
-const perks = [
-  "Presencia abrumadora",
-  "Presencia perturbadora",
-  "Quebrantamentes",
-  "Recuérdame",
-  "Rencor",
-  "Reparador",
-  "Resistente",
-  "Restricción cruel",
-  "Sabueso de sangre",
-  "Senda del tormento",
-  "Sin piedad",
-  "Sin restricciones",
-  "Sin salida",
-  "Soberbia",
-  "Sobrecarga / el doctor",
-  "Sobrecarga / el demogorgon",
-  "Soy todo oídos",
-  "Supervisión",
-  "Tanatofobia",
-  "Temblores trepidantes",
-  "Terminal",
-  "Terror contagioso",
-  "Toma una decisión",
-  "Toque lánguido",
-  "Tormento despiadado",
-  "Trueno sísmico",
-  "Tácticas zanshin",
-  "Unidos por siempre",
-  "Vocación de enfermera",
-  "Voracidad",
-  "¡Plaf!",
-  "Abrazo de la muerte",
-  "Acechador de ciervos",
-  "Acumulador",
-  "Agitación",
-  "Aliento",
-  "Amigos hasta el fin",
-  "Anatomía superior",
-  "Anuncio de salmuera",
-  "Aprendizaje automatizado",
-  "Apretón de hierro",
-  "Arma definitiva",
-  "Armonización de tejido",
-  "Arrogancia oscura",
-  "Atadura mortal",
-  "Baterías incluidas",
-  "Bestia de presa",
-  "Brutalidad veloz",
-  "Cabeza dentada",
-  "Caos",
-  "Carnicero chapucero",
-  "Codicia humana",
-  "Conciencia de estar despiertos",
-  "Contacto séptico",
-  "Coulrofobia",
-  "Depredación",
-  "Desasosiego",
-  "Desatado",
-  "Desconcierto",
-  "Deslumbrante",
-  "Devoción oscura",
-  "Discordancia",
-  "Disolución",
-  "Dominación",
-  "Doncella de hierro",
-  "Duda forzada",
-  "Eco de sangre",
-  "Enfurecimiento",
-  "Erupción",
-  "Esperanza rota",
-  "Espías de las sombras",
-  "Fuerza brutal",
-  "Furia ciega",
-  "Furia espiritual",
-  "Gancho torturador: brújula irregular",
-  "Gancho torturador: dolor resonante",
-  "Gancho torturador: heridas supurantes",
-  "Gancho torturador: santuario monstruoso",
-  "Gancho torturador: torrente de ira",
-  "Gancho torturador: truco del verdugo",
-  "Garra de dragón",
-  "Golpe de gracia",
-  "Guardián de sangre",
-  "Hijo de la luz",
-  "Hijo de las sombras",
-  "Histeria",
-  "Hora de la cacería",
-  "Implacable",
-  "Imprevisto",
-  "Inacabado",
-  "Influencia",
-  "Insidia",
-  "Instinto alienígena",
-  "Instinto territorial",
-  "Interruptor de hombre muerto",
-  "Intervención corrupta",
-  "Jugar con la comida",
-  "Lo mejor para el final",
-  "Luz que agoniza",
-  "Límites genéticos",
-  "Maleficio: arrepentimiento",
-  "Maleficio: arrullo de cazadora",
-  "Maleficio: control del público",
-  "Maleficio: destino miserable",
-  "Maleficio: devoradora de esperanza",
-  "Maleficio: el bufón de la fortuna",
-  "Maleficio: el tercer sello",
-  "Maleficio: enfrentar a la oscuridad",
-  "Maleficio: favor de sangre",
-  "Maleficio: inmortal",
-  "Maleficio: la emoción de la caza",
-  "Maleficio: nadie escapa de la muerte",
-  "Maleficio: obertura de la perdición",
-  "Maleficio: pura miseria",
-  "Maleficio: restribución",
-  "Maleficio: ruina",
-  "Maleficio: tierra embrujada",
-  "Maleficio: yo también puedo jugar",
-  "Miedo fantasmal",
-  "Monitorización y abuso",
-  "Muerte de franklin",
-  "Murmullo amargo",
-  "Murmullos",
-  "Nadie es libre",
-  "No hay dónde esconderse",
-  "Noqueo",
-  "Némesis",
-  "Ojo errante",
-  "Opresión",
-  "Oscuridad revelada",
-  "Parrillada y chile",
-  "Pedido de ayuda",
-  "Penitencia forzada",
-  "Persecución furtiva",
-  "Perseguidor letal",
-  "Pim pam pum"
-];
+function getItems(l){ return Array.isArray(l.items) ? l.items : Object.values(l.items || {}); }
 
-const partidas = [
-  "1 stream entero",
-  "1 partida",
-  "2 partidas",
-  "3 partidas",
-  "4 partidas",
-  "5 partidas",
-  "1 partida",
-  "2 partidas",
-  "1 partida",
-  "1 partida"
-];
+// ---- TABS ----
+window.cambiarTab = (tab) => {
+  document.getElementById('tab-listas').style.display = tab === 'listas' ? '' : 'none';
+  document.getElementById('tab-ruleta').style.display = tab === 'ruleta' ? '' : 'none';
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && tab==='listas') || (i===1 && tab==='ruleta'));
+  });
+};
 
-const nombres = [
-  "Doom",
-  "Gun",
-  "Dead",
-  "Charlie",
-  "Victor",
-  "Estruvulucu",
-  "King",
-  "Scarleth"
-];
-
-const mapas = [
-  "Torre de Carbón",
-  "Fundición de la Miseria",
-  "Depósito de los Lamentos",
-  "Bosque Refugio",
-  "Foso de Asfixia",
-
-  "Último descanso de Azarov",
-  "Refugio sangriento",
-  "Gasolinera",
-  "Tienda destrozada",
-  "Patio de chatarrería",
-
-  "Matadero rancio",
-  "Campos podridos",
-  "Cobertizo fracturado",
-  "Arroyo del tormento",
-  "Casa Thompson",
-
-  "Capilla del Padre Campbell",
-  "Sala perturbada",
-
-  "Despensa siniestra",
-  "La Rosa pálida",
-
-  "Calle Lampkin",
-
-  "Teatro de tratamiento",
-
-  "Morada materna",
-  "Templo de la purgación",
-
-  "Preescolar Badham I",
-  "Preescolar Badham II",
-  "Preescolar Badham III",
-  "Preescolar Badham IV",
-  "Preescolar Badham V",
-
-  "El Juego",
-
-  "Residencia familiar",
-  "Santuario de la ira",
-
-  "Complejo Monte Ormond",
-
-  "Complejo subterráneo",
-
-  "Escuela primaria Midwich",
-
-  "Comisaría de Raccoon City Este",
-  "Comisaría de Raccoon City Oeste",
-
-  "Cantina del Perro Muerto",
-
-  "Jardín de la alegría",
-
-  "Plaza desgarrada",
-
-  "Nido de cuervos",
-
-  "Aterrizaje Toba",
-  "Ruinas olvidadas",
-
-  "Naufragio Nostromo",
-
-  "Delirio del Embaucador"
-];
-
-const listaDiv = document.getElementById("lista");
-const textoInput = document.getElementById("texto");
-const excluir1Select = document.getElementById("excluir1");
-const excluir2Select = document.getElementById("excluir2");
-
-function guardarFirebase(){
-  set(ref(db,"ruleta/premios"), premios);
+// ---- LISTAS ----
+function renderListas(){
+  const todas = todasLasListas();
+  const ids = Object.keys(todas);
+  document.getElementById('total-listas').textContent = ids.length + ' listas';
+  const c = document.getElementById('listas-container');
+  if(ids.length === 0){ c.innerHTML = '<div class="empty">No hay listas</div>'; return; }
+  c.innerHTML = '';
+  ids.forEach(id => {
+    const l = todas[id];
+    const items = getItems(l);
+    const div = document.createElement('div');
+    div.className = 'lista-item' + (id === listaSelId ? ' selected' : '');
+    div.onclick = () => seleccionar(id);
+    div.innerHTML = `
+      <span class="lista-nombre">${l.nombre}${l.predefinida ? '<span class="tag-pre">predefinida</span>' : ''}</span>
+      <span class="lista-count">${items.length}</span>
+    `;
+    c.appendChild(div);
+  });
 }
 
-function actualizarSelects(){
-  // Actualizar ambos selects de exclusión
-  [excluir1Select, excluir2Select].forEach(select => {
-    select.innerHTML = '<option value="">-- Ninguno --</option>';
-    premios.forEach((p, i) => {
-      const option = document.createElement("option");
-      option.value = i;
-      option.textContent = p;
-      select.appendChild(option);
+function seleccionar(id){
+  listaSelId = id;
+  renderListas();
+  renderDetalle();
+}
+
+function getListaActual(){
+  if(!listaSelId) return null;
+  return todasLasListas()[listaSelId] || null;
+}
+
+function renderDetalle(){
+  const l = getListaActual();
+  document.getElementById('detalle-vacio').style.display = l ? 'none' : '';
+  document.getElementById('detalle-contenido').style.display = l ? '' : 'none';
+  if(!l) return;
+  const items = getItems(l);
+  document.getElementById('detalle-titulo').textContent = l.nombre;
+  document.getElementById('detalle-count').textContent = items.length + ' items';
+  const c = document.getElementById('items-container');
+  c.innerHTML = '';
+  if(items.length === 0){ c.innerHTML = '<div class="empty">Sin items</div>'; return; }
+  items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.id = `irow-${i}`;
+    row.innerHTML = `
+      <span class="item-text">${item}</span>
+      ${!l.predefinida ? `
+        <button style="font-size:11px;padding:3px 8px" onclick="editarItem(${i})">✏️</button>
+        <button class="btn-danger" style="font-size:11px;padding:3px 8px" onclick="eliminarItem(${i})">✕</button>
+      ` : ''}
+    `;
+    c.appendChild(row);
+  });
+}
+
+window.editarItem = (i) => {
+  const l = getListaActual();
+  const items = getItems(l);
+  const row = document.getElementById(`irow-${i}`);
+  row.innerHTML = `
+    <input class="item-edit-input" id="ei-${i}" value="${items[i].replace(/"/g,'&quot;')}" style="flex:1;margin:0">
+    <button class="btn-success" style="font-size:11px;padding:3px 8px" onclick="guardarItem(${i})">OK</button>
+    <button style="font-size:11px;padding:3px 8px" onclick="renderDetalle()">✕</button>
+  `;
+  document.getElementById(`ei-${i}`).focus();
+};
+
+window.guardarItem = (i) => {
+  const l = listas[listaSelId];
+  if(!l) return;
+  const items = [...getItems(l)];
+  const val = document.getElementById(`ei-${i}`).value.trim();
+  if(!val) return;
+  items[i] = val;
+  update(ref(db, `listas/${listaSelId}`), { items });
+  status('Item actualizado');
+};
+
+window.eliminarItem = (i) => {
+  const l = listas[listaSelId];
+  if(!l) return;
+  const items = [...getItems(l)];
+  items.splice(i, 1);
+  update(ref(db, `listas/${listaSelId}`), { items });
+  status('Item eliminado');
+};
+
+window.agregarItemDetalle = () => {
+  if(!listaSelId) return;
+  const l = listas[listaSelId];
+  if(!l){ alert('Las listas predefinidas no se pueden editar directamente. Usa "Editar" para crear una copia.'); return; }
+  const input = document.getElementById('nuevo-item-input');
+  const val = input.value.trim();
+  if(!val) return;
+  const items = [...getItems(l), val];
+  update(ref(db, `listas/${listaSelId}`), { items });
+  input.value = '';
+  status('Item agregado');
+};
+
+window.usarListaSeleccionada = () => {
+  const l = getListaActual();
+  if(!l) return;
+  const items = getItems(l);
+  set(ref(db, 'ruleta/premios'), items);
+  premiosRuleta = [...items];
+  renderRuleta();
+  status(`Lista "${l.nombre}" cargada en la ruleta`);
+  cambiarTab('ruleta');
+};
+
+window.editarListaSeleccionada = () => {
+  const l = getListaActual();
+  if(!l) return;
+  const items = getItems(l);
+  if(l.predefinida){
+    if(!confirm('Es una lista predefinida. Se creará una copia editable. ¿Continuar?')) return;
+    modoModal = 'nueva';
+    document.getElementById('modal-title').textContent = 'Copia de lista';
+    document.getElementById('modal-nombre').value = l.nombre + ' (copia)';
+    document.getElementById('modal-items').value = items.join('\n');
+  } else {
+    modoModal = 'editar';
+    document.getElementById('modal-title').textContent = 'Editar lista';
+    document.getElementById('modal-nombre').value = l.nombre;
+    document.getElementById('modal-items').value = items.join('\n');
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+};
+
+window.eliminarListaSeleccionada = () => {
+  const l = getListaActual();
+  if(!l) return;
+  if(l.predefinida){ alert('Las listas predefinidas no se pueden eliminar.'); return; }
+  if(!confirm(`¿Eliminar "${l.nombre}"?`)) return;
+  remove(ref(db, `listas/${listaSelId}`));
+  listaSelId = null;
+  status('Lista eliminada');
+};
+
+window.abrirModalNueva = () => {
+  modoModal = 'nueva';
+  document.getElementById('modal-title').textContent = 'Nueva lista';
+  document.getElementById('modal-nombre').value = '';
+  document.getElementById('modal-items').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+};
+
+window.cerrarModal = () => document.getElementById('modal-overlay').classList.remove('open');
+
+window.guardarModal = () => {
+  const nombre = document.getElementById('modal-nombre').value.trim();
+  const items = document.getElementById('modal-items').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!nombre){ alert('El nombre es obligatorio'); return; }
+  if(modoModal === 'editar' && listaSelId && listas[listaSelId]){
+    update(ref(db, `listas/${listaSelId}`), { nombre, items });
+    status('Lista actualizada');
+  } else {
+    const r = push(ref(db, 'listas'));
+    set(r, { nombre, items });
+    listaSelId = r.key;
+    status('Lista creada');
+  }
+  cerrarModal();
+};
+
+// ---- RULETA ----
+function renderRuleta(){
+  const c = document.getElementById('lista-ruleta');
+  document.getElementById('count-ruleta').textContent = premiosRuleta.length;
+  c.innerHTML = '';
+  premiosRuleta.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'item-ruleta';
+    d.innerHTML = `<span>${p}</span><button onclick="eliminarPremio(${i})">❌</button>`;
+    c.appendChild(d);
+  });
+  // Actualizar selects de exclusión
+  [document.getElementById('excluir1'), document.getElementById('excluir2')].forEach(s => {
+    s.innerHTML = '<option value="">-- Ninguno --</option>';
+    premiosRuleta.forEach((p,i) => {
+      const o = document.createElement('option');
+      o.value = i; o.textContent = p;
+      s.appendChild(o);
     });
   });
 }
 
-function renderLista(){
-  listaDiv.innerHTML="";
-  premios.forEach((p,i)=>{
-    const d=document.createElement("div");
-    d.className="item";
-    d.innerHTML = `
-      <span>${p}</span>
-      <button class="delete" onclick="eliminar(${i})">❌</button>
-    `;
-    listaDiv.appendChild(d);
-  });
-  actualizarSelects();
-}
-
 window.agregar = () => {
-  const t = textoInput.value.trim();
+  const t = document.getElementById('texto').value.trim();
   if(!t) return;
-  premios.push(t);
-  textoInput.value="";
-  renderLista();
-  guardarFirebase();
+  premiosRuleta.push(t);
+  document.getElementById('texto').value = '';
+  renderRuleta();
+  set(ref(db,'ruleta/premios'), premiosRuleta);
 };
 
-window.eliminar = (index) => {
-  premios.splice(index,1);
-  renderLista();
-  guardarFirebase();
+window.eliminarPremio = (i) => {
+  premiosRuleta.splice(i, 1);
+  renderRuleta();
+  set(ref(db,'ruleta/premios'), premiosRuleta);
 };
 
 window.limpiar = () => {
-  premios = [];
-  renderLista();
-  guardarFirebase();
+  premiosRuleta = [];
+  renderRuleta();
+  set(ref(db,'ruleta/premios'), []);
 };
 
 window.girar = () => {
-  if(premios.length === 0){
-    alert("⚠️ Agrega items a la ruleta primero");
-    return;
-  }
-
-  // Seleccionar ganador aleatorio
-  const ganador = premios[Math.floor(Math.random() * premios.length)];
-
-  // Escribir en Firebase
-  set(ref(db,"ruleta"), {
-    premios: premios,
-    resultado: ganador
-  });
+  if(premiosRuleta.length === 0){ alert('⚠️ Agrega items a la ruleta primero'); return; }
+  const ganador = premiosRuleta[Math.floor(Math.random() * premiosRuleta.length)];
+  set(ref(db,'ruleta'), { premios: premiosRuleta, resultado: ganador });
 };
 
 window.girarConExclusiones = () => {
-  if(premios.length === 0){
-    alert("⚠️ Agrega items a la ruleta primero");
-    return;
-  }
-
-  const excluido1 = excluir1Select.value;
-  const excluido2 = excluir2Select.value;
-  
-  // Validar que no sean el mismo item
-  if(excluido1 !== "" && excluido1 === excluido2){
-    alert("⚠️ Los dos items excluidos no pueden ser el mismo");
-    return;
-  }
-
-  // Crear array de índices válidos (sin los excluidos)
-  const indicesValidos = [];
-  premios.forEach((p, i) => {
-    if(i.toString() !== excluido1 && i.toString() !== excluido2){
-      indicesValidos.push(i);
-    }
-  });
-
-  // Validar que queden al menos 1 item válido
-  if(indicesValidos.length === 0){
-    alert("⚠️ Debes dejar al menos un item sin excluir");
-    return;
-  }
-
-  // Seleccionar ganador aleatorio de los items válidos
-  const indiceGanador = indicesValidos[Math.floor(Math.random() * indicesValidos.length)];
-  const ganador = premios[indiceGanador];
-
-  // Escribir en Firebase
-  set(ref(db,"ruleta"), {
-    premios: premios,
-    resultado: ganador
-  });
-
-  // Opcional: resetear los selects
-  excluir1Select.value = "";
-  excluir2Select.value = "";
+  if(premiosRuleta.length === 0){ alert('⚠️ Agrega items a la ruleta primero'); return; }
+  const e1 = document.getElementById('excluir1').value;
+  const e2 = document.getElementById('excluir2').value;
+  if(e1 !== '' && e1 === e2){ alert('⚠️ Los dos items excluidos no pueden ser el mismo'); return; }
+  const validos = premiosRuleta.map((_,i)=>i).filter(i => i.toString()!==e1 && i.toString()!==e2);
+  if(validos.length === 0){ alert('⚠️ Debes dejar al menos un item sin excluir'); return; }
+  const ganador = premiosRuleta[validos[Math.floor(Math.random() * validos.length)]];
+  set(ref(db,'ruleta'), { premios: premiosRuleta, resultado: ganador });
+  document.getElementById('excluir1').value = '';
+  document.getElementById('excluir2').value = '';
 };
 
-window.cargarKillersOriginales = () => {
-  premios = [...killersOriginales];
-  renderLista();
-  guardarFirebase();
-};
+// Firebase listeners
+onValue(ref(db, 'listas'), snap => {
+  listas = snap.exists() ? snap.val() : {};
+  renderListas();
+  renderDetalle();
+});
 
-window.cargarKillersLicenciados = () => {
-  premios = [...killersLicenciados];
-  renderLista();
-  guardarFirebase();
-};
-
-window.cargarKillersComunidad = () => {
-  premios = [...killersComunidad];
-  renderLista();
-  guardarFirebase();
-};
-
-window.cargarTodos = () => {
-  premios = [...killersOriginales, ...killersLicenciados, ...killersComunidad];
-  renderLista();
-  guardarFirebase();
-};
-
-window.cargarPerks = () => {
-  premios = [...perks];
-  renderLista();
-  guardarFirebase();
-};
-
-window.cargarPartidas = () => {
-  premios = [...partidas];
-  renderLista();
-  guardarFirebase();
-};
-
-window.cargarNombres = () => {
-  premios = [...nombres];
-  renderLista();
-  guardarFirebase();
-};
-
-window.cargarMapas = () => {
-  premios = [...mapas];
-  renderLista();
-  guardarFirebase();
-};
-
-onValue(ref(db,"ruleta/premios"), snap=>{
+onValue(ref(db, 'ruleta/premios'), snap => {
   if(snap.exists()){
-    premios = snap.val();
-    renderLista();
+    premiosRuleta = snap.val() || [];
+    renderRuleta();
   }
 });
 </script>
-
 </body>
 </html>
